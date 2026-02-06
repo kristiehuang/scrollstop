@@ -6,9 +6,16 @@ chrome.runtime.onInstalled.addListener((details) => {
     // Set default settings
     chrome.storage.sync.set({
       scrollLimit: 3000,
+      dailyBlockLimit: 5,
       redirectUrl: 'https://notion.so',
       blockedSites: ['twitter.com', 'x.com', 'instagram.com'],
       enabled: true
+    });
+    
+    // Initialize daily block tracking
+    chrome.storage.local.set({
+      dailyBlockCounts: {},
+      dailyBlockDate: new Date().toISOString().split('T')[0]
     });
     
     console.log('Scroll Stop: Extension installed with default settings');

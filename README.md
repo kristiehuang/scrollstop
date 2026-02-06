@@ -5,10 +5,12 @@ A Chrome extension that helps you break the infinite scroll habit by limiting ho
 ## Features
 
 - **Customizable scroll limit**: Set a pixel threshold (default: 3000px, roughly 3 screen heights)
+- **Daily block limit**: Set how many times you can hit the scroll limit per site per day (default: 5). After that, the site is fully locked!
 - **Block any site**: Add Twitter, Instagram, LinkedIn, TikTok, Reddit, or any other distracting site
 - **Quick-add buttons**: One-click to add popular social media sites
 - **Custom redirect**: Choose where to go when you've scrolled enough (default: Notion)
-- **Progress indicator**: See how much scrolling you have left
+- **Progress indicator**: See how much scrolling you have left AND how many blocks remain today
+- **Today's stats**: View your block counts per site in the popup
 - **Beautiful UI**: Clean, modern design with smooth animations
 
 ## Installation
@@ -23,21 +25,32 @@ A Chrome extension that helps you break the infinite scroll habit by limiting ho
 
 1. Click the extension icon to open settings
 2. Set your **scroll limit** (recommended: 2000-5000 pixels)
-3. Set your **redirect URL** (where you want to go when limit is reached)
-4. Add sites to block using:
+3. Set your **daily block limit** (how many times you can hit the scroll limit before the site is locked)
+4. Set your **redirect URL** (where you want to go when limit is reached)
+5. Add sites to block using:
    - The input field + "Add" button
    - Quick-add chips for popular sites
-5. Toggle the extension on/off as needed
-6. Click **Save Settings**
+6. View **Today's Stats** to see how many times you've been blocked on each site
+7. Toggle the extension on/off as needed
+8. Click **Save Settings**
 
 ## How It Works
 
 When you visit a blocked site:
-1. A small progress indicator appears in the bottom-right corner
+1. A small progress indicator appears in the bottom-right corner showing:
+   - Pixels remaining before scroll limit
+   - Number of blocks remaining today
 2. As you scroll, it tracks your total scroll distance
 3. At 80% of your limit, the indicator turns pink as a warning
-4. When you hit the limit, a full-screen overlay appears
-5. After a 3-second countdown, you're redirected to your productive site
+4. When you hit the scroll limit:
+   - A full-screen overlay appears showing how many blocks you have left today
+   - Your block count for that site increases by 1
+   - After a 3-second countdown, you're redirected to your productive site
+5. **If you've hit the daily block limit** (e.g., 5 blocks on Twitter):
+   - The site is immediately locked when you visit
+   - A "Site Locked for Today" overlay appears
+   - You're redirected without the option to scroll at all
+   - The lock resets at midnight
 
 ## Files
 
@@ -62,6 +75,7 @@ The extension uses Chrome's sync storage, so your settings will sync across devi
 
 Default settings:
 - Scroll limit: 3000 pixels
+- Daily block limit: 5 times per site
 - Redirect: https://notion.so
 - Blocked sites: twitter.com, x.com, instagram.com
 

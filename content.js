@@ -2,6 +2,7 @@
 (function() {
   let settings = {
     scrollLimit: 3000,
+    dailyBlockLimit: 5,
     redirectUrl: 'https://notion.so',
     blockedSites: ['twitter.com', 'x.com', 'instagram.com'],
     enabled: true
@@ -9,8 +10,28 @@
 
   let totalScrolled = 0;
   let isBlocked = false;
+  let isDailyLocked = false;
   let warningOverlay = null;
   let hasRedirected = false;
+  let currentSiteKey = null;
+
+  // Get current site key for tracking
+  function getCurrentSiteKey() {
+    const hostname = window.location.hostname.toLowerCase().replace('www.', '');
+    // Find matching blocked site
+    for (const site of settings.blockedSites) {
+      const cleanSite = site.toLowerCase().replace('www.', '');
+      if (hostname === cleanSite || hostname.endsWith('.' + cleanSite)) {
+        return cleanSite;
+      }
+    }
+    return hostname;
+  }
+
+  // Get today's date key
+  function getTodayKey() {
+    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  }
 
   // Check if current site is in blocked list
   function isBlockedSite() {
@@ -21,12 +42,63 @@
     });
   }
 
+  // Get daily block count for current site
+  async function getDailyBlockCount() {
+    try {
+      const result = await chrome.storage.local.get(['dailyBlockCounts', 'dailyBlockDate']);
+      const today = getTodayKey();
+      
+      // Reset if it's a new day
+      if (result.dailyBlockDate !== today) {
+        await chrome.storage.local.set({
+          dailyBlockCounts: {},
+          dailyBlockDate: today
+        });
+        return 0;
+      }
+      
+      const counts = result.dailyBlockCounts || {};
+      return counts[currentSiteKey] || 0;
+    } catch (error) {
+      console.error('Scroll Stop: Error getting daily block count', error);
+      return 0;
+    }
+  }
+
+  // Increment daily block count for current site
+  async function incrementDailyBlockCount() {
+    try {
+      const result = await chrome.storage.local.get(['dailyBlockCounts', 'dailyBlockDate']);
+      const today = getTodayKey();
+      
+      let counts = result.dailyBlockCounts || {};
+      
+      // Reset if it's a new day
+      if (result.dailyBlockDate !== today) {
+        counts = {};
+      }
+      
+      counts[currentSiteKey] = (counts[currentSiteKey] || 0) + 1;
+      
+      await chrome.storage.local.set({
+        dailyBlockCounts: counts,
+        dailyBlockDate: today
+      });
+      
+      return counts[currentSiteKey];
+    } catch (error) {
+      console.error('Scroll Stop: Error incrementing daily block count', error);
+      return 0;
+    }
+  }
+
   // Load settings from storage
   async function loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['scrollLimit', 'redirectUrl', 'blockedSites', 'enabled']);
+      const result = await chrome.storage.sync.get(['scrollLimit', 'dailyBlockLimit', 'redirectUrl', 'blockedSites', 'enabled']);
       
       if (result.scrollLimit) settings.scrollLimit = result.scrollLimit;
+      if (result.dailyBlockLimit) settings.dailyBlockLimit = result.dailyBlockLimit;
       if (result.redirectUrl) settings.redirectUrl = result.redirectUrl;
       if (result.blockedSites) settings.blockedSites = result.blockedSites;
       if (result.enabled !== undefined) settings.enabled = result.enabled;
@@ -34,9 +106,11 @@
       // Reset scroll count when settings change
       totalScrolled = 0;
       hasRedirected = false;
+      isDailyLocked = false;
       
       if (isBlockedSite() && settings.enabled) {
-        initScrollTracking();
+        currentSiteKey = getCurrentSiteKey();
+        await checkDailyLimit();
       } else {
         cleanup();
       }
@@ -45,27 +119,90 @@
     }
   }
 
-  // Create warning overlay
-  function createWarningOverlay() {
+  // Check if daily limit exceeded
+  async function checkDailyLimit() {
+    const blockCount = await getDailyBlockCount();
+    
+    if (blockCount >= settings.dailyBlockLimit) {
+      // Site is locked for the day!
+      isDailyLocked = true;
+      isBlocked = true;
+      createDailyLockOverlay(blockCount);
+    } else {
+      initScrollTracking(blockCount);
+    }
+  }
+
+  // Create daily lock overlay (site fully blocked)
+  function createDailyLockOverlay(blockCount) {
     if (warningOverlay) return;
+
+    warningOverlay = document.createElement('div');
+    warningOverlay.id = 'scroll-stop-warning';
+    warningOverlay.innerHTML = `
+      <div class="scroll-stop-content daily-locked">
+        <div class="scroll-stop-icon">🔒</div>
+        <p class="motivational-text">What are you doing here?<br>Does the work match the ambition?</p>
+        <p class="site-locked-info">${currentSiteKey} is locked until tomorrow.</p>
+        <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
+        <button id="scroll-stop-redirect-now">Back to What Matters</button>
+      </div>
+    `;
+
+    appendOverlayStyles();
+    document.body.appendChild(warningOverlay);
+
+    // Add event listener for immediate redirect
+    document.getElementById('scroll-stop-redirect-now').addEventListener('click', redirect);
+
+    // Start countdown
+    startRedirectCountdown();
+  }
+
+
+
+  // Create warning overlay (scroll limit reached)
+  async function createWarningOverlay() {
+    if (warningOverlay) return;
+
+    // Increment the block count
+    const newCount = await incrementDailyBlockCount();
+    const remaining = settings.dailyBlockLimit - newCount;
 
     warningOverlay = document.createElement('div');
     warningOverlay.id = 'scroll-stop-warning';
     warningOverlay.innerHTML = `
       <div class="scroll-stop-content">
         <div class="scroll-stop-icon">🛑</div>
-        <h2>Scroll Limit Reached!</h2>
-        <p>You've scrolled <span id="scroll-stop-count">${totalScrolled}</span> pixels.</p>
-        <p>Time to be productive!</p>
+        <p class="motivational-text">Dial it in. Does The Work Match The Ambition?</p>
+        <p class="block-count-warning">${remaining > 0 
+          ? `${remaining}/${settings.dailyBlockLimit} chances today`
+          : `🔒 No more chances. ${currentSiteKey} is locked for today.`
+        }</p>
         <div class="scroll-stop-progress">
           <div class="scroll-stop-progress-bar" style="width: 100%"></div>
         </div>
         <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
-        <button id="scroll-stop-redirect-now">Go Now</button>
+        <button id="scroll-stop-redirect-now">Get Back on Track</button>
       </div>
     `;
 
+    appendOverlayStyles();
+    document.body.appendChild(warningOverlay);
+
+    // Add event listener for immediate redirect
+    document.getElementById('scroll-stop-redirect-now').addEventListener('click', redirect);
+
+    // Start countdown
+    startRedirectCountdown();
+  }
+
+  // Append overlay styles
+  function appendOverlayStyles() {
+    if (document.getElementById('scroll-stop-overlay-styles')) return;
+    
     const style = document.createElement('style');
+    style.id = 'scroll-stop-overlay-styles';
     style.textContent = `
       #scroll-stop-warning {
         position: fixed;
@@ -98,6 +235,10 @@
         animation: slideUp 0.4s ease;
       }
       
+      .scroll-stop-content.daily-locked {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+      }
+      
       @keyframes slideUp {
         from { 
           opacity: 0;
@@ -124,6 +265,28 @@
         font-size: 16px;
         margin-bottom: 12px;
         opacity: 0.9;
+      }
+      
+      .scroll-stop-content .motivational-text {
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 20px 0;
+        opacity: 1;
+      }
+      
+      .scroll-stop-content .site-locked-info {
+        font-size: 14px;
+        opacity: 0.7;
+      }
+      
+      .scroll-stop-content .block-count-warning {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 14px;
+        margin: 16px 0;
       }
       
       .scroll-stop-progress {
@@ -159,6 +322,10 @@
         transition: transform 0.2s, box-shadow 0.2s;
       }
       
+      .daily-locked #scroll-stop-redirect-now {
+        color: #f5576c;
+      }
+      
       #scroll-stop-redirect-now:hover {
         transform: scale(1.05);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -166,12 +333,10 @@
     `;
 
     document.head.appendChild(style);
-    document.body.appendChild(warningOverlay);
+  }
 
-    // Add event listener for immediate redirect
-    document.getElementById('scroll-stop-redirect-now').addEventListener('click', redirect);
-
-    // Start countdown
+  // Start redirect countdown
+  function startRedirectCountdown() {
     let countdown = 3;
     const countdownEl = document.getElementById('scroll-stop-countdown');
     const progressBar = document.querySelector('.scroll-stop-progress-bar');
@@ -226,6 +391,16 @@
           transform: scale(1.05);
         }
         
+        #scroll-stop-indicator .indicator-main {
+          font-weight: 600;
+        }
+        
+        #scroll-stop-indicator .indicator-blocks {
+          font-size: 11px;
+          opacity: 0.85;
+          margin-top: 4px;
+        }
+        
         #scroll-stop-indicator .progress-bar {
           height: 4px;
           background: rgba(255, 255, 255, 0.3);
@@ -261,13 +436,15 @@
   }
 
   // Update progress indicator
-  function updateProgressIndicator() {
+  function updateProgressIndicator(blockCount) {
     const indicator = createProgressIndicator();
     const percentage = Math.min((totalScrolled / settings.scrollLimit) * 100, 100);
     const remaining = Math.max(settings.scrollLimit - totalScrolled, 0);
+    const blocksRemaining = settings.dailyBlockLimit - blockCount;
     
     indicator.innerHTML = `
-      🛑 ${Math.round(remaining)} px left
+      <div class="indicator-main">🛑 ${Math.round(remaining)} px left</div>
+      <div class="indicator-blocks">${blocksRemaining} block${blocksRemaining === 1 ? '' : 's'} left today</div>
       <div class="progress-bar">
         <div class="progress-fill" style="width: ${percentage}%"></div>
       </div>
@@ -281,15 +458,18 @@
     }
   }
 
+  // Current block count for display
+  let currentBlockCount = 0;
+
   // Handle scroll events
   function handleScroll(e) {
-    if (!settings.enabled || isBlocked || hasRedirected) return;
+    if (!settings.enabled || isBlocked || hasRedirected || isDailyLocked) return;
     
     // Track scroll delta
     const delta = Math.abs(e.deltaY || 0);
     if (delta > 0) {
       totalScrolled += delta;
-      updateProgressIndicator();
+      updateProgressIndicator(currentBlockCount);
       
       // Check if limit reached
       if (totalScrolled >= settings.scrollLimit) {
@@ -309,9 +489,11 @@
   }
 
   // Initialize scroll tracking
-  function initScrollTracking() {
+  function initScrollTracking(blockCount) {
     // Remove any existing listeners first
     cleanup();
+    
+    currentBlockCount = blockCount;
     
     // Add scroll tracking
     window.addEventListener('wheel', handleScroll, { passive: true });
@@ -321,7 +503,7 @@
     window.addEventListener('touchmove', blockScroll, { passive: false });
     
     // Show initial progress indicator
-    updateProgressIndicator();
+    updateProgressIndicator(blockCount);
   }
 
   // Cleanup function
@@ -341,7 +523,7 @@
 
   // Listen for settings updates from popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'SETTINGS_UPDATED') {
+    if (message.type === 'SETTINGS_UPDATED' || message.type === 'STATS_RESET') {
       loadSettings();
     }
   });

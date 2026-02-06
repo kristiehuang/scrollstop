@@ -323,3 +323,98 @@ header h1 {
 .site-list::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
+
+/* Stats section */
+.stats-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.daily-stats {
+  margin-bottom: 12px;
+}
+
+.daily-stats .no-stats {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.stat-item:last-child {
+  margin-bottom: 0;
+}
+
+.stat-item .stat-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+}
+
+.stat-item .stat-site {
+  color: #333;
+  font-weight: 500;
+}
+
+.stat-item .stat-count {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.stat-item.locked {
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
+.stat-item.locked .stat-site,
+.stat-item.locked .stat-count {
+  color: white;
+}
+
+.btn-reset-site {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-reset-site:hover {
+  background: #dc3545;
+  color: white;
+  transform: scale(1.1);
+}
+
+.stat-item.locked .btn-reset-site {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.stat-item.locked .btn-reset-site:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
