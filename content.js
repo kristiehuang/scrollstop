@@ -145,7 +145,7 @@
         <p class="motivational-text">What are you doing here?<br>Does the work match the ambition?</p>
         <p class="site-locked-info">${currentSiteKey} is locked until tomorrow.</p>
         <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
-        <button id="scroll-stop-close-tab">Close Tab</button>
+        <button id="scroll-stop-close-tab">${getActionButtonText()}</button>
       </div>
     `;
 
@@ -162,6 +162,21 @@
   // Close the current tab
   function closeTab() {
     window.close();
+  }
+
+  function getActionButtonText() {
+    const roll = Math.random();
+    // Get random button text (70% close tab, 30% action item)
+    if (roll < 0.7) {
+      return 'Close Tab';
+    }
+    const actions = [
+      'Go Drink Water 💧',
+      'Do Some Pushups 💪',
+      'Hit the Pullup Bar',
+      'Get Up and Stretch 🧘'
+    ];
+    return actions[Math.floor(Math.random() * actions.length)];
   }
 
   // Create warning overlay (scroll limit reached)
@@ -186,7 +201,7 @@
           <div class="scroll-stop-progress-bar" style="width: 100%"></div>
         </div>
         <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
-        <button id="scroll-stop-close-tab">Close Tab</button>
+        <button id="scroll-stop-close-tab">${getActionButtonText()}</button>
       </div>
     `;
 
