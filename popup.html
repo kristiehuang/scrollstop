@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scroll Stop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛑 Scroll Stop</h1>
+      <p class="subtitle">Break the infinite scroll habit</p>
+    </header>
+
+    <section class="settings-section">
+      <h2>Scroll Limit</h2>
+      <div class="input-group">
+        <input type="number" id="scrollLimit" min="100" step="100" placeholder="2000">
+        <span class="unit">pixels</span>
+      </div>
+      <p class="hint">Recommended: 2000-5000 pixels (~2-5 screen heights)</p>
+    </section>
+
+    <section class="settings-section">
+      <h2>Redirect To</h2>
+      <div class="input-group">
+        <input type="url" id="redirectUrl" placeholder="https://notion.so">
+      </div>
+      <p class="hint">Where should we send you when you've scrolled enough?</p>
+    </section>
+
+    <section class="settings-section">
+      <h2>Blocked Sites</h2>
+      <div class="add-site">
+        <input type="text" id="newSite" placeholder="twitter.com">
+        <button id="addSiteBtn" class="btn-add">+ Add</button>
+      </div>
+      <ul id="siteList" class="site-list">
+        <!-- Sites will be populated here -->
+      </ul>
+      <div class="quick-add">
+        <span>Quick add:</span>
+        <button class="chip" data-site="twitter.com">Twitter</button>
+        <button class="chip" data-site="x.com">X</button>
+        <button class="chip" data-site="instagram.com">Instagram</button>
+        <button class="chip" data-site="linkedin.com">LinkedIn</button>
+        <button class="chip" data-site="facebook.com">Facebook</button>
+        <button class="chip" data-site="reddit.com">Reddit</button>
+        <button class="chip" data-site="tiktok.com">TikTok</button>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="toggle-row">
+        <span>Extension enabled</span>
+        <label class="toggle">
+          <input type="checkbox" id="enabledToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </section>
+
+    <button id="saveBtn" class="btn-save">Save Settings</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
