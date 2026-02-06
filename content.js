@@ -145,21 +145,24 @@
         <p class="motivational-text">What are you doing here?<br>Does the work match the ambition?</p>
         <p class="site-locked-info">${currentSiteKey} is locked until tomorrow.</p>
         <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
-        <button id="scroll-stop-redirect-now">Back to What Matters</button>
+        <button id="scroll-stop-close-tab">Close Tab</button>
       </div>
     `;
 
     appendOverlayStyles();
     document.body.appendChild(warningOverlay);
 
-    // Add event listener for immediate redirect
-    document.getElementById('scroll-stop-redirect-now').addEventListener('click', redirect);
+    // Add event listener to close tab
+    document.getElementById('scroll-stop-close-tab').addEventListener('click', closeTab);
 
-    // Start countdown
+    // Start countdown (will redirect)
     startRedirectCountdown();
   }
 
-
+  // Close the current tab
+  function closeTab() {
+    window.close();
+  }
 
   // Create warning overlay (scroll limit reached)
   async function createWarningOverlay() {
@@ -183,17 +186,17 @@
           <div class="scroll-stop-progress-bar" style="width: 100%"></div>
         </div>
         <p class="scroll-stop-redirect">Redirecting in <span id="scroll-stop-countdown">3</span> seconds...</p>
-        <button id="scroll-stop-redirect-now">Get Back on Track</button>
+        <button id="scroll-stop-close-tab">Close Tab</button>
       </div>
     `;
 
     appendOverlayStyles();
     document.body.appendChild(warningOverlay);
 
-    // Add event listener for immediate redirect
-    document.getElementById('scroll-stop-redirect-now').addEventListener('click', redirect);
+    // Add event listener to close tab
+    document.getElementById('scroll-stop-close-tab').addEventListener('click', closeTab);
 
-    // Start countdown
+    // Start countdown (will redirect)
     startRedirectCountdown();
   }
 
@@ -309,7 +312,7 @@
         opacity: 0.8;
       }
       
-      #scroll-stop-redirect-now {
+      #scroll-stop-close-tab {
         margin-top: 20px;
         padding: 14px 32px;
         font-size: 16px;
@@ -322,11 +325,11 @@
         transition: transform 0.2s, box-shadow 0.2s;
       }
       
-      .daily-locked #scroll-stop-redirect-now {
+      .daily-locked #scroll-stop-close-tab {
         color: #f5576c;
       }
       
-      #scroll-stop-redirect-now:hover {
+      #scroll-stop-close-tab:hover {
         transform: scale(1.05);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
       }
